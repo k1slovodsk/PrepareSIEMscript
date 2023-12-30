@@ -1,0 +1,58 @@
+# В скрипте не хватает
+# 1. Монтирование диска и копирование репозиториев
+# 2. Установки пакетов curl, perl и iptables
+# 3. Установки ntp сервера и удаление ненужных пакетов
+# 4. Создание бондинга
+
+#!/bin/bash
+#Запись переменных IP-адрес, FQDN, hostname, для дальнейшей замены их в файле.
+#Через команду read осуществляется ввод с клавиатуры. Постфикс var нужен для того
+#чтобы не было совпадений с имеющимися выражениями
+echo Введите ip-адрес сервера
+read ip_address_var
+echo Введите hostname сервера
+read hostname_var
+echo Введите FQDN сервера
+read fqdn_var
+echo Введите ip-адрес DNS сервера
+read dns_var
+echo Введите зону прямого просмотра
+read domain_var
+#Внесение сведений о hostname. Может стоит убрать? Дублирует #изменения в файле
+hostnamectl set-hostname $hostname_var
+# Создание папки для хранения неизмененного файла
+mkdir /etc/rcv_htn_var
+#Копируем hosts для возможности дальнейшего восстановления
+cp -R /etc/hosts /etc/rcv_htn_var
+#в проде вылезают ошибки с созданием папки, нужно доработать этот #момент
+# Cоздаем файл и вписываем туда параметры, согласно инструкции
+cat << EOF > /etc/hosts
+127.0.0.1	localhost
+$ip_address_var $fqdn_var $hostname_var
+EOF
+# прописываем настройки DNS
+DNS= /etc/resolv.conf
+if test -f "$DNS"; then
+	mkdir /etc/rsv_var
+	cp -R /etc/resolv.conf /etc/rsc_var
+fi
+touch /etc/resolv.conf
+cat << EOF > /etc/resolv.conf
+nameserver	$dns_var
+search	$domain_var
+EOF
+# Отключаем ipv6
+IPV6=/etc/resolv.conf
+if test -f "$IPV6"; then
+	mkdir /etc/sctl_var
+	cp -R /etc/sysctl.conf /etc/sctl_var
+fi
+cat << EOF > /etc/sysctl.conf
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+EOF
+#проверка отключения ipv6, выдает значения выше, можно доработать, #чтобы вывод был красивее
+sysctl -p
+
+
